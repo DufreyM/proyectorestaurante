@@ -21,6 +21,9 @@ func main() {
 
 	r.POST("/ordenes", handlers.CreateOrden)
 	r.GET("/ordenes", handlers.GetOrdenes)
+	r.PUT("/ordenes/:id/cancelar", handlers.UpdateOrdenEstado)
+	r.PUT("/ordenes/masivo", handlers.UpdateManyOrdenes)
+	r.DELETE("/ordenes/:id", handlers.DeleteOrden)
 
 	r.POST("/resenas", handlers.CreateResena)
 	r.GET("/resenas", handlers.GetResenas)
