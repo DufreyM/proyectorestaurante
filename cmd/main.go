@@ -34,5 +34,7 @@ func main() {
 	r.POST("/usuarios/bulk", handlers.BulkUsuarios)
 	r.GET("/debug/explain-ordenes", handlers.ExplainOrdenes)
 	r.GET("/restaurantes/cercanos", handlers.RestaurantesCercanos)
+	r.GET("/reportes/platillos-mas-vendidos", handlers.PlatillosMasVendidos)
+
 	r.Run(":8080")
 }
