@@ -49,3 +49,31 @@ func GetResenas(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resenas)
 }
+
+func PlatillosMasVendidos(c *gin.Context) {
+
+	pipeline := []bson.M{
+		{"$unwind": "$items"},
+		{
+			"$group": bson.M{
+				"_id":      "$items.articulo_id",
+				"cantidad": bson.M{"$sum": "$items.cantidad"},
+			},
+		},
+		{"$sort": bson.M{"cantidad": -1}},
+	}
+
+	cursor, err := config.DB.Collection("ordenes").
+		Aggregate(context.Background(), pipeline)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	var resultados []bson.M
+	cursor.All(context.Background(), &resultados)
+
+	c.JSON(http.StatusOK, resultados)
+}
