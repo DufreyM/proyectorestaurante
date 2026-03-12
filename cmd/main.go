@@ -5,6 +5,8 @@ import (
 	"restaurant-system/handlers"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
+	"time"
 )
 
 func main() {
@@ -13,11 +15,22 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	r.POST("/usuarios", handlers.CreateUsuario)
 	r.GET("/usuarios", handlers.GetUsuarios)
+	r.POST("/usuarios/bulk", handlers.BulkInsertUsuarios)
 
 	r.POST("/restaurantes", handlers.CreateRestaurante)
 	r.GET("/restaurantes", handlers.GetRestaurantes)
+	r.GET("/restaurantes/cercanos", handlers.RestaurantesCercanos)
 
 	r.POST("/ordenes", handlers.CreateOrden)
 	r.GET("/ordenes", handlers.GetOrdenes)
@@ -29,12 +42,10 @@ func main() {
 	r.GET("/resenas", handlers.GetResenas)
 
 	r.GET("/reportes/mejores-restaurantes", handlers.RestaurantesMejorCalificados)
-
 	r.GET("/reportes/ventas-por-mes", handlers.VentasPorMes)
-	r.POST("/usuarios/bulk", handlers.BulkUsuarios)
-	r.GET("/debug/explain-ordenes", handlers.ExplainOrdenes)
-	r.GET("/restaurantes/cercanos", handlers.RestaurantesCercanos)
 	r.GET("/reportes/platillos-mas-vendidos", handlers.PlatillosMasVendidos)
+
+	r.GET("/debug/explain-ordenes", handlers.ExplainOrdenes)
 
 	r.Run(":8080")
 }
