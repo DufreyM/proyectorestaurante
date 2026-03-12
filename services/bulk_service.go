@@ -8,7 +8,6 @@ import (
 	"restaurant-system/config"
 	"restaurant-system/models"
 
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func BulkInsertUsuarios() error {

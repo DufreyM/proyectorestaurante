@@ -26,7 +26,7 @@ func main() {
 
 	r.POST("/usuarios", handlers.CreateUsuario)
 	r.GET("/usuarios", handlers.GetUsuarios)
-	r.POST("/usuarios/bulk", handlers.BulkInsertUsuarios)
+	r.POST("/usuarios/bulk", handlers.BulkUsuarios)
 
 	r.POST("/restaurantes", handlers.CreateRestaurante)
 	r.GET("/restaurantes", handlers.GetRestaurantes)
