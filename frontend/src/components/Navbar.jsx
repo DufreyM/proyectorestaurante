@@ -1,3 +1,4 @@
+import { Navbar, Nav, Container } from 'react-bootstrap'
 import { NavLink } from 'react-router-dom'
 
 const links = [
@@ -8,28 +9,38 @@ const links = [
   { to: '/resenas', label: 'Reseñas' },
 ]
 
-export default function Navbar() {
+export default function NavigationBar() {
   return (
-    <nav className="bg-orange-600 text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 flex items-center gap-6 h-14">
-        <span className="font-bold text-lg tracking-wide">🍽 RestaurantApp</span>
-        <div className="flex gap-2 ml-4">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.to === '/'}
-              className={({ isActive }) =>
-                `px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  isActive ? 'bg-white text-orange-600' : 'hover:bg-orange-500'
-                }`
-              }
-            >
-              {l.label}
-            </NavLink>
-          ))}
-        </div>
-      </div>
-    </nav>
+    <Navbar
+      expand="lg"
+      style={{ backgroundColor: '#ea580c' }} // naranja tipo orange-600
+      variant="dark"
+      className="shadow-sm"
+    >
+      <Container>
+        <Navbar.Brand className="fw-bold text-white">
+          🍽 RestaurantApp
+        </Navbar.Brand>
+
+        <Navbar.Toggle aria-controls="main-navbar" />
+
+        <Navbar.Collapse id="main-navbar">
+          <Nav className="ms-4">
+            {links.map((l) => (
+              <Nav.Link
+                key={l.to}
+                as={NavLink}
+                to={l.to}
+                end={l.to === '/'}
+                style={{ textDecoration: 'none' }}
+                className="text-white px-3"
+              >
+                {l.label}
+              </Nav.Link>
+            ))}
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
   )
 }

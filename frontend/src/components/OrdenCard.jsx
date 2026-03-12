@@ -1,17 +1,18 @@
+import { Card, Badge, Button } from 'react-bootstrap'
 import { cancelarOrden, deleteOrden } from '../services/ordenes'
 
-const estadoColors = {
-  pendiente: 'bg-yellow-100 text-yellow-700',
-  procesando: 'bg-blue-100 text-blue-700',
-  completado: 'bg-green-100 text-green-700',
-  cancelado: 'bg-red-100 text-red-700',
+const estadoVariant = {
+  pendiente: 'warning',
+  procesando: 'primary',
+  completado: 'success',
+  cancelado: 'danger',
 }
 
 export default function OrdenCard({ orden, onRefresh }) {
   const handleCancelar = async () => {
-    if (!confirm('¿Cancelar esta orden?')) return
+    if (!window.confirm('¿Cancelar esta orden?')) return
     try {
-      await cancelarOrden(orden._id)
+      await cancelarOrden(orden.ID)
       onRefresh()
     } catch {
       alert('Error al cancelar la orden')
@@ -19,9 +20,9 @@ export default function OrdenCard({ orden, onRefresh }) {
   }
 
   const handleEliminar = async () => {
-    if (!confirm('¿Eliminar esta orden permanentemente?')) return
+    if (!window.confirm('¿Eliminar esta orden permanentemente?')) return
     try {
-      await deleteOrden(orden._id)
+      await deleteOrden(orden.ID)
       onRefresh()
     } catch {
       alert('Error al eliminar la orden')
@@ -29,41 +30,64 @@ export default function OrdenCard({ orden, onRefresh }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 border border-gray-100 flex flex-col gap-2">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-xs text-gray-400 font-mono">#{orden._id?.slice(-6)}</p>
-          <p className="text-sm text-gray-500">{orden.fecha ? new Date(orden.fecha).toLocaleDateString() : '—'}</p>
-        </div>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoColors[orden.estado] || 'bg-gray-100 text-gray-600'}`}>
-          {orden.estado}
-        </span>
-      </div>
-
-      <div className="text-sm text-gray-700 divide-y divide-gray-50">
-        {orden.items?.map((item, i) => (
-          <div key={i} className="flex justify-between py-1">
-            <span>{item.nombre} <span className="text-gray-400">x{item.cantidad}</span></span>
-            <span>${item.subtotal?.toFixed(2) ?? (item.precio_unitario * item.cantidad).toFixed(2)}</span>
+    <Card className="mb-3 shadow-sm">
+      <Card.Body>
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <small className="text-muted font-monospace">
+              #{orden.ID?.slice(-6)}
+            </small>
+            <div className="text-muted">
+              {orden.Fecha ? new Date(orden.Fecha).toLocaleDateString() : '—'}
+            </div>
           </div>
-        ))}
-      </div>
 
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100 mt-1">
-        <span className="font-bold text-gray-800">${orden.total?.toFixed(2) ?? '—'}</span>
-        <div className="flex gap-2">
-          {orden.estado !== 'cancelado' && orden.estado !== 'completado' && (
-            <button onClick={handleCancelar}
-              className="text-xs px-3 py-1 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 font-medium">
-              Cancelar
-            </button>
-          )}
-          <button onClick={handleEliminar}
-            className="text-xs px-3 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 font-medium">
-            Eliminar
-          </button>
+          <Badge bg={estadoVariant[orden.Estado] || 'secondary'}>
+            {orden.Estado}
+          </Badge>
         </div>
-      </div>
-    </div>
+
+        <div className="mb-2">
+          {orden.Items?.map((item, i) => (
+            <div key={i} className="d-flex justify-content-between border-bottom py-1">
+              <span>
+                {item.Nombre} <small className="text-muted">x{item.Cantidad}</small>
+              </span>
+              <span>
+                $
+                {(item.Subtotal ??
+                  item.PrecioUnitario * item.Cantidad
+                ).toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="d-flex justify-content-between align-items-center mt-2">
+          <strong>${orden.Total?.toFixed(2)}</strong>
+
+          <div className="d-flex gap-2">
+            {orden.Estado !== 'cancelado' &&
+              orden.Estado !== 'completado' && (
+                <Button
+                  size="sm"
+                  variant="warning"
+                  onClick={handleCancelar}
+                >
+                  Cancelar
+                </Button>
+              )}
+
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={handleEliminar}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      </Card.Body>
+    </Card>
   )
 }

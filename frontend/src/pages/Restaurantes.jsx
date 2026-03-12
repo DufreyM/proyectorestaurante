@@ -1,10 +1,28 @@
 import { useEffect, useState } from 'react'
-import { getRestaurantes, createRestaurante, getRestaurantesCercanos } from '../services/restaurantes'
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Form,
+  Card,
+  Alert,
+  Spinner
+} from 'react-bootstrap'
+import {
+  getRestaurantes,
+  createRestaurante,
+  getRestaurantesCercanos
+} from '../services/restaurantes'
 import RestauranteCard from '../components/RestauranteCard'
 
 const emptyForm = {
-  nombre: '', descripcion: '', categorias: '', estado: 'activo',
-  lat: '', lng: '',
+  nombre: '',
+  descripcion: '',
+  categorias: '',
+  estado: 'activo',
+  lat: '',
+  lng: ''
 }
 
 export default function Restaurantes() {
@@ -27,110 +45,222 @@ export default function Restaurantes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    const lat = parseFloat(form.lat)
+    const lng = parseFloat(form.lng)
+
+    if (isNaN(lat) || isNaN(lng)) {
+      alert('Latitud y longitud deben ser números válidos')
+      return
+    }
+
     const payload = {
       nombre: form.nombre,
       descripcion: form.descripcion,
-      categorias: form.categorias.split(',').map((c) => c.trim()).filter(Boolean),
+      categorias: form.categorias
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean),
       estado: form.estado,
       ubicacion: {
         type: 'Point',
-        coordinates: [parseFloat(form.lng), parseFloat(form.lat)],
-      },
+        coordinates: [lng, lat], // Mongo espera [lng, lat]
+      }
     }
+
     try {
       await createRestaurante(payload)
       setShowForm(false)
       setForm(emptyForm)
       cargar()
-    } catch {
+    } catch (err) {
+      console.error(err)
       alert('Error al crear restaurante')
     }
   }
 
   const handleBuscarCercanos = async (e) => {
     e.preventDefault()
+
+    const lat = parseFloat(busqueda.lat)
+    const lng = parseFloat(busqueda.lng)
+    const dist = parseFloat(busqueda.dist || 1000)
+
+    if (isNaN(lat) || isNaN(lng)) {
+      alert('Latitud y longitud deben ser números válidos')
+      return
+    }
+
     try {
-      const r = await getRestaurantesCercanos(busqueda.lat, busqueda.lng, busqueda.dist)
+      const r = await getRestaurantesCercanos(lat, lng, dist)
       setRestaurantes(r.data || [])
-    } catch {
+    } catch (err) {
+      console.error(err)
       alert('Error en búsqueda por cercanía')
     }
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Restaurantes</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700"
-        >
-          {showForm ? 'Cancelar' : '+ Nuevo'}
-        </button>
-      </div>
+    <Container className="mt-4">
+      <Row className="mb-3 align-items-center">
+        <Col>
+          <h2>Restaurantes</h2>
+        </Col>
+        <Col className="text-end">
+          <Button
+            variant={showForm ? "outline-danger" : "primary"}
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? 'Cancelar' : '+ Nuevo'}
+          </Button>
+        </Col>
+      </Row>
 
       {/* Formulario nuevo restaurante */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input required placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <input placeholder="Descripción" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <input placeholder="Categorías (separadas por coma)" value={form.categorias} onChange={(e) => setForm({ ...form, categorias: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
-          <input placeholder="Latitud" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <input placeholder="Longitud" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <button type="submit" className="md:col-span-2 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 text-sm">
-            Guardar Restaurante
-          </button>
-        </form>
+        <Card className="mb-4 shadow-sm">
+          <Card.Body>
+            <Form onSubmit={handleSubmit}>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Nombre</Form.Label>
+                    <Form.Control
+                      required
+                      value={form.nombre}
+                      onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Descripción</Form.Label>
+                    <Form.Control
+                      value={form.descripcion}
+                      onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Categorías</Form.Label>
+                    <Form.Control
+                      placeholder="italiana, pizza"
+                      value={form.categorias}
+                      onChange={(e) => setForm({ ...form, categorias: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Estado</Form.Label>
+                    <Form.Select
+                      value={form.estado}
+                      onChange={(e) => setForm({ ...form, estado: e.target.value })}
+                    >
+                      <option value="activo">Activo</option>
+                      <option value="inactivo">Inactivo</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Latitud</Form.Label>
+                    <Form.Control
+                      value={form.lat}
+                      onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Longitud</Form.Label>
+                    <Form.Control
+                      value={form.lng}
+                      onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+
+              <Button type="submit" variant="success">
+                Guardar Restaurante
+              </Button>
+            </Form>
+          </Card.Body>
+        </Card>
       )}
 
       {/* Búsqueda por cercanía */}
-      <form onSubmit={handleBuscarCercanos} className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Latitud</label>
-          <input value={busqueda.lat} onChange={(e) => setBusqueda({ ...busqueda, lat: e.target.value })}
-            placeholder="19.4326" className="border rounded-lg px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Longitud</label>
-          <input value={busqueda.lng} onChange={(e) => setBusqueda({ ...busqueda, lng: e.target.value })}
-            placeholder="-99.1332" className="border rounded-lg px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Distancia (m)</label>
-          <input value={busqueda.dist} onChange={(e) => setBusqueda({ ...busqueda, dist: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
-        <button type="submit" className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-800">
-          Buscar Cercanos
-        </button>
-        <button type="button" onClick={cargar} className="text-sm text-orange-600 hover:underline">
-          Ver todos
-        </button>
-      </form>
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <Form onSubmit={handleBuscarCercanos}>
+            <Row className="align-items-end">
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Latitud</Form.Label>
+                  <Form.Control
+                    value={busqueda.lat}
+                    onChange={(e) => setBusqueda({ ...busqueda, lat: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Longitud</Form.Label>
+                  <Form.Control
+                    value={busqueda.lng}
+                    onChange={(e) => setBusqueda({ ...busqueda, lng: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Distancia (m)</Form.Label>
+                  <Form.Control
+                    value={busqueda.dist}
+                    onChange={(e) => setBusqueda({ ...busqueda, dist: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={3} className="d-flex gap-2">
+                <Button type="submit" variant="dark">
+                  Buscar
+                </Button>
+                <Button variant="outline-secondary" onClick={cargar}>
+                  Ver todos
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+        </Card.Body>
+      </Card>
 
       {loading ? (
-        <p className="text-gray-400">Cargando...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : restaurantes.length === 0 ? (
-        <p className="text-gray-400">No hay restaurantes registrados.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {restaurantes.map((r) => (
-            <RestauranteCard key={r._id} restaurante={r} />
-          ))}
+        <div className="text-center mt-4">
+          <Spinner animation="border" />
         </div>
+      ) : error ? (
+        <Alert variant="danger">{error}</Alert>
+      ) : restaurantes.length === 0 ? (
+        <Alert variant="secondary">No hay restaurantes registrados.</Alert>
+      ) : (
+        <Row>
+          {restaurantes.map((r) => (
+            <Col md={6} lg={4} key={r.ID}>
+              <RestauranteCard restaurante={r} />
+            </Col>
+          ))}
+        </Row>
       )}
-    </div>
+    </Container>
   )
 }

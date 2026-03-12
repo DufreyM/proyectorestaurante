@@ -1,5 +1,19 @@
 import { useEffect, useState } from 'react'
-import { getOrdenes, createOrden, procesarPendientes } from '../services/ordenes'
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Form,
+  Card,
+  Alert,
+  Spinner
+} from 'react-bootstrap'
+import {
+  getOrdenes,
+  createOrden,
+  procesarPendientes
+} from '../services/ordenes'
 import { getUsuarios } from '../services/usuarios'
 import { getRestaurantes } from '../services/restaurantes'
 import OrdenCard from '../components/OrdenCard'
@@ -19,6 +33,7 @@ export default function Ordenes() {
 
   const cargar = () => {
     setLoading(true)
+
     Promise.all([getOrdenes(), getUsuarios(), getRestaurantes()])
       .then(([o, u, r]) => {
         setOrdenes(o.data || [])
@@ -39,6 +54,7 @@ export default function Ordenes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
     const payload = {
       usuario_id: usuarioId,
       restaurante_id: restauranteId,
@@ -48,6 +64,7 @@ export default function Ordenes() {
         cantidad: parseInt(it.cantidad),
       })),
     }
+
     try {
       await createOrden(payload)
       setShowForm(false)
@@ -59,92 +76,140 @@ export default function Ordenes() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Órdenes</h1>
-        <div className="flex gap-2">
-          <button
+    <Container className="mt-4">
+      <Row className="mb-3 align-items-center">
+        <Col>
+          <h2>Órdenes</h2>
+        </Col>
+        <Col className="text-end">
+          <Button
+            variant="primary"
+            className="me-2"
             onClick={async () => {
-              if (!confirm('¿Pasar todas las órdenes pendientes a "procesando"?')) return
-              try { await procesarPendientes(); cargar() } catch { alert('Error al procesar') }
+              if (!window.confirm('¿Procesar todas las pendientes?')) return
+              await procesarPendientes()
+              cargar()
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
           >
             Procesar Pendientes
-          </button>
-          <button
+          </Button>
+
+          <Button
+            variant={showForm ? "outline-danger" : "success"}
             onClick={() => setShowForm(!showForm)}
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700"
           >
             {showForm ? 'Cancelar' : '+ Nueva Orden'}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Col>
+      </Row>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-5 mb-6 flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Usuario</label>
-              <select required value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-400">
-                <option value="">Seleccionar usuario</option>
-                {usuarios.map((u) => (
-                  <option key={u._id} value={u._id}>{u.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Restaurante</label>
-              <select required value={restauranteId} onChange={(e) => setRestauranteId(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-400">
-                <option value="">Seleccionar restaurante</option>
-                {restaurantes.map((r) => (
-                  <option key={r._id} value={r._id}>{r.nombre}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+        <Card className="mb-4 shadow-sm">
+          <Card.Body>
+            <Form onSubmit={handleSubmit}>
+              <Row className="mb-3">
+                <Col md={6}>
+                  <Form.Select
+                    required
+                    value={usuarioId}
+                    onChange={(e) => setUsuarioId(e.target.value)}
+                  >
+                    <option value="">Seleccionar usuario</option>
+                    {usuarios.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.Nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Col>
 
-          <div>
-            <p className="text-xs text-gray-500 mb-2">Items</p>
-            {items.map((item, i) => (
-              <div key={i} className="flex gap-2 mb-2 flex-wrap">
-                <input placeholder="Nombre del plato" value={item.nombre} onChange={(e) => updateItem(i, 'nombre', e.target.value)}
-                  className="border rounded-lg px-3 py-2 text-sm flex-1 min-w-32 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                <input placeholder="Precio" type="number" value={item.precioUnitario} onChange={(e) => updateItem(i, 'precioUnitario', e.target.value)}
-                  className="border rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                <input placeholder="Cant." type="number" min="1" value={item.cantidad} onChange={(e) => updateItem(i, 'cantidad', e.target.value)}
-                  className="border rounded-lg px-3 py-2 text-sm w-20 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                {items.length > 1 && (
-                  <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))}
-                    className="text-red-400 hover:text-red-600 text-sm px-2">✕</button>
-                )}
+                <Col md={6}>
+                  <Form.Select
+                    required
+                    value={restauranteId}
+                    onChange={(e) => setRestauranteId(e.target.value)}
+                  >
+                    <option value="">Seleccionar restaurante</option>
+                    {restaurantes.map((r) => (
+                      <option key={r.ID} value={r.ID}>
+                        {r.Nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Col>
+              </Row>
+
+              {items.map((item, i) => (
+                <Row key={i} className="mb-2">
+                  <Col>
+                    <Form.Control
+                      placeholder="Nombre del plato"
+                      value={item.nombre}
+                      onChange={(e) => updateItem(i, 'nombre', e.target.value)}
+                    />
+                  </Col>
+                  <Col md={2}>
+                    <Form.Control
+                      type="number"
+                      placeholder="Precio"
+                      value={item.precioUnitario}
+                      onChange={(e) =>
+                        updateItem(i, 'precioUnitario', e.target.value)
+                      }
+                    />
+                  </Col>
+                  <Col md={2}>
+                    <Form.Control
+                      type="number"
+                      min="1"
+                      value={item.cantidad}
+                      onChange={(e) =>
+                        updateItem(i, 'cantidad', e.target.value)
+                      }
+                    />
+                  </Col>
+                </Row>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline-secondary"
+                size="sm"
+                onClick={() =>
+                  setItems([...items, { ...emptyItem }])
+                }
+                className="mb-3"
+              >
+                + Agregar Item
+              </Button>
+
+              <div>
+                <Button type="submit" variant="success">
+                  Crear Orden
+                </Button>
               </div>
-            ))}
-            <button type="button" onClick={() => setItems([...items, { ...emptyItem }])}
-              className="text-sm text-orange-600 hover:underline">+ Agregar item</button>
-          </div>
-
-          <button type="submit" className="bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 text-sm">
-            Crear Orden
-          </button>
-        </form>
+            </Form>
+          </Card.Body>
+        </Card>
       )}
 
       {loading ? (
-        <p className="text-gray-400">Cargando...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : ordenes.length === 0 ? (
-        <p className="text-gray-400">No hay órdenes registradas.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ordenes.map((o) => (
-            <OrdenCard key={o._id} orden={o} onRefresh={cargar} />
-          ))}
+        <div className="text-center mt-4">
+          <Spinner animation="border" />
         </div>
+      ) : error ? (
+        <Alert variant="danger">{error}</Alert>
+      ) : ordenes.length === 0 ? (
+        <Alert variant="secondary">No hay órdenes registradas.</Alert>
+      ) : (
+        <Row>
+          {ordenes.map((o) => (
+            <Col md={6} lg={4} key={o.ID}>
+              <OrdenCard orden={o} onRefresh={cargar} />
+            </Col>
+          ))}
+        </Row>
       )}
-    </div>
+    </Container>
   )
 }
